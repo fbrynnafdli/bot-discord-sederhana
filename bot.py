@@ -57,6 +57,14 @@ async def p(ctx):
 async def bajing(ctx):
     await ctx.send('batak anjing')
 
+@bot.command()
+async def av(ctx, member: discord.Member = None):
+    """Menampilkan avatar profil pengguna"""
+    member = member or ctx.author
+    embed = discord.Embed(title=f"Avatar {member.display_name}")
+    embed.set_image(url=member.avatar.url)
+    await ctx.send(embed=embed)
+
 # Perintah kustom untuk menampilkan daftar perintah
 @bot.command()
 async def help(ctx):
@@ -69,6 +77,7 @@ async def help(ctx):
     `!echo [message]` - Mengulangi pesan yang diberikan
     `!p` - Mengirim pesan 'pa pe pa pe'
     `!bajing` - Mengirim pesan "batak anjing"
+    `!av` - Menampilkan avatar seseorang
     `!help` - Menampilkan daftar perintah
     """
     await ctx.send(commands_list)

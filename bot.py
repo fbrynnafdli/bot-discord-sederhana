@@ -52,6 +52,11 @@ async def ulangi(ctx, *, message: str):
 async def p(ctx):
     await ctx.send('pa pe pa pe')
 
+# Perintah untuk merespons 'bajing'
+@bot.command()
+async def bajing(ctx):
+    await ctx.send('batak anjing')
+
 # Perintah kustom untuk menampilkan daftar perintah
 @bot.command()
 async def help(ctx):
@@ -63,6 +68,7 @@ async def help(ctx):
     `!info` - Menampilkan jumlah orang dongo di server ini
     `!echo [message]` - Mengulangi pesan yang diberikan
     `!p` - Mengirim pesan 'pa pe pa pe'
+    `!bajing` - Mengirim pesan "batak anjing"
     `!help` - Menampilkan daftar perintah
     """
     await ctx.send(commands_list)

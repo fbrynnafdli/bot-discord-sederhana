@@ -40,7 +40,7 @@ async def ping(ctx):
 # Perintah  untuk merespons 'info'
 @bot.command()
 async def info(ctx):
-    await ctx.send(f'This server has {ctx.guild.member_count} members!')
+    await ctx.send(f'Server ini mempunyai {ctx.guild.member_count} orang dongo!')
 
 # Perintah untuk merespons 'ulangi' yang mengulangi pesan pengguna
 @bot.command()

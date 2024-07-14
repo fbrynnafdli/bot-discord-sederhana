@@ -25,7 +25,7 @@ async def on_ready():
 # Perintah sederhana untuk menguji bot
 @bot.command()
 async def hello(ctx):
-    await ctx.send('Hello!')
+    await ctx.send('apa anjing')
 
 # Perintah untuk merespons 'woy'
 @bot.command()
@@ -57,7 +57,7 @@ async def p(ctx):
 async def help(ctx):
     commands_list = """
     Berikut adalah command yang tersedia:
-    `!hello` - Mengirim pesan 'Hello!'
+    `!hello` - Mengirim pesan 'apa anjing!'
     `!woy` - Mengirim pesan 'apa ngentot'
     `!ping` - Mengirim pesan 'Pong!'
     `!info` - Menampilkan jumlah orang dongo di server ini

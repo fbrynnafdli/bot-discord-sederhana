@@ -2,7 +2,8 @@ import os
 from dotenv import load_dotenv
 import discord
 from discord.ext import commands, tasks
-import datetime
+from datetime import datetime, timedelta
+import asyncio
 
 
 # Muat variabel lingkungan dari file .env
@@ -17,6 +18,7 @@ if TOKEN is None:
 intents = discord.Intents.default()
 intents.message_content = True  # Intents untuk konten pesan
 intents.voice_states = True #Intents untuk voice
+intents.members = True
 
 # Global variable untuk melacak siapa yang mengundang bot ke chanel
 inviter_id = None
@@ -28,37 +30,24 @@ bot = commands.Bot(command_prefix='!', intents=intents, help_command=None)
 async def on_ready():
     print(f'We have logged in as {bot.user}')
 
-# Perintah sederhana untuk menguji bot
-@bot.command()
-async def hello(ctx):
-    await ctx.send('apa anjing')
-
-# Perintah untuk merespons 'woy'
+# Command Custom
 @bot.command()
 async def woy(ctx):
     await ctx.send('apa ngentot')
 
-# Perintah  untuk merespons 'ping'
 @bot.command()
 async def ping(ctx):
     await ctx.send('Pong!')
 
-# Perintah  untuk merespons 'info'
-@bot.command()
-async def info(ctx):
-    await ctx.send(f'Server ini mempunyai {ctx.guild.member_count} orang dongo!')
-
-# Perintah untuk merespons 'ulangi' yang mengulangi pesan pengguna
-@bot.command()
-async def ulangi(ctx, *, message: str):
-    await ctx.send(message)
-
-# Perintah untuk merespons 'bajing'
 @bot.command()
 async def bajing(ctx):
     await ctx.send('batak anjing')
 
-# Perintah untuk menampilkan avatar seseorang
+@bot.command()
+async def ulangi(ctx, *, message: str):
+    await ctx.send(message)
+
+# Command General
 @bot.command()
 async def av(ctx, member: discord.Member = None):
     """Menampilkan avatar profil pengguna"""
@@ -67,6 +56,80 @@ async def av(ctx, member: discord.Member = None):
     embed.set_image(url=member.avatar.url)
     await ctx.send(embed=embed)
 
+# Command Server Info
+@bot.command()
+async def info(ctx):
+    await ctx.send(f'Server ini mempunyai {ctx.guild.member_count} orang dongo!')
+
+# Command Moderation
+@bot.command()
+@commands.has_permissions(manage_roles=True)
+async def mute(ctx, member: discord.Member, *, reason=None):
+    guild = ctx.guild
+    role = discord.utils.get(guild.roles, name='Muted')
+
+    if not role:
+        role = await guild.create_role(name='Muted', permissions=discord.Permissions(send_messages=False, add_reactions=False))
+
+        for channel in guild.channels:
+            await channel.set_permissions(role, send_messages=False, add_reactions=False)
+
+    await member.add_roles(role, reason=reason)
+    await ctx.send(f'{member.mention} telah di muted. alasan: {reason if reason else "tanpa alasan"}')
+
+@bot.command()
+@commands.has_permissions(manage_roles=True)
+async def unmute(ctx, member: discord.Member):
+    role = discord.utils.get(ctx.guild.roles, name='Muted')
+    if role in member.roles:
+        await member.remove_roles(role)
+        await ctx.send(f'{member.mention} telah di unmuted.')
+    else:
+        await ctx.send(f'{member.mention} sedang tidak di muted.')
+
+@bot.command()
+@commands.has_permissions(ban_members=True)
+async def ban(ctx, member: discord.Member, *, reason=None):
+    await member.ban(reason=reason)
+    await ctx.send(f'{member.mention} telah di ban. alasan: {reason if reason else "tanpa alasan"}')
+
+@bot.command()
+@commands.has_permissions(ban_members=True)
+async def unban(ctx, user_id: int):
+    user = await bot.fetch_user(user_id)
+    await ctx.guild.unban(user)
+    await ctx.send(f'{user.mention} telah di unbanned.')
+
+@bot.command()
+@commands.has_permissions(kick_members=True)
+async def kick(ctx, member: discord.Member, *, reason=None):
+    await member.kick(reason=reason)
+    await ctx.send(f'{member.mention} telah di mute. alasan: {reason if reason else "tanpa alasan"}')
+
+@bot.command()
+@commands.has_permissions(manage_roles=True)
+async def tempmute(ctx, member: discord.Member, time: str, *, reason=None):
+    role = discord.utils.get(ctx.guild.roles, name='Muted')
+    if not role:
+        role = await ctx.guild.create_role(name='Muted', permissions=discord.Permissions(send_messages=False, add_reactions=False))
+        for channel in ctx.guild.channels:
+            await channel.set_permissions(role, send_messages=False, add_reactions=False)
+
+    await member.add_roles(role, reason=reason)
+    await ctx.send(f'{member.mention} telah di mute sementara hingga {time}. Reason: {reason if reason else "tanpa alasan"}')
+
+    time_mapping = {'s': 1, 'm': 60, 'h': 3600, 'd': 86400}
+    if time[-1] in time_mapping:
+        duration = int(time[:-1]) * time_mapping[time[-1]]
+    else:
+        await ctx.send("Invalid time format. Use a format like 10m, 1h, or 1d.")
+        return
+
+    await asyncio.sleep(duration)
+    await member.remove_roles(role)
+    await ctx.send(f'{member.mention} waktu unmute telah selesai.')
+
+# Command Music Player
 @bot.command()
 async def join(ctx):
     """Bergabung ke voice channel pengguna jika mereka ada di voice channel"""
@@ -75,7 +138,7 @@ async def join(ctx):
         if ctx.voice_client.channel == ctx.author.voice.channel:
             await ctx.send("Saya sudah berada di voice channel yang sama dengan Baginda.")
         else:
-            await ctx.send(f"Saya sudah berada di voice channel lain: {ctx.voice_client.channel.name}")
+            await ctx.send(f"Saya sudah berada di voice channel lain, tidak bisa bergabung")
     else:
         if ctx.author.voice:  # Memeriksa apakah pengguna berada di voice channel
             channel = ctx.author.voice.channel
@@ -122,23 +185,20 @@ async def check_voice_channel():
             else:
                 empty_since = None  # Reset ketika ada member yang masuk
 
-# Perintah kustom untuk menampilkan daftar perintah
+# Command untuk menampilkan daftar perintah
 @bot.command()
 async def help(ctx):
-    commands_list = """
-    Berikut adalah command yang tersedia:
-    `!hello` - Mengirim pesan 'apa anjing!'
-    `!woy` - Mengirim pesan 'apa ngentot'
-    `!ping` - Mengirim pesan 'Pong!'
-    `!info` - Menampilkan jumlah orang dongo di server ini
-    `!echo [message]` - Mengulangi pesan yang diberikan
-    `!bajing` - Mengirim pesan "batak anjing"
-    `!av` - Menampilkan avatar seseorang 
-    `!join` - Mengundang Bot untuk masuk ke dalam voice chat
-    `!leave` - Memerintahkan bot untuk meninggalkan voice chat
-    `!help` - Menampilkan daftar perintah
-    """
-    await ctx.send(commands_list)
+    embed = discord.Embed(
+        title="Vot Command List",
+        color=0x00FFFF
+    )
+    
+    embed.add_field(name="General", value="`afk` `avatar` `help` `ping`", inline=True)
+    embed.add_field(name="Info Server", value="`info`", inline=True)
+    embed.add_field(name="Moderation", value="`ban` `mute` `kick` `tempmute` `unban` `unmute`", inline=True)
+    embed.add_field(name="Command Custom", value="`woy` `bajing` `ping` `ulangi`")
+    await ctx.send(embed=embed)
+    
 
 # Jalankan bot dengan token yang dimuat dari .env
 bot.run(TOKEN)

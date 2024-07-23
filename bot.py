@@ -161,7 +161,7 @@ async def leave(ctx):
             song_queue.clear()
             inviter_id = None
             empty_since = None
-            check_voice_channel.stop()  # Hentikan tugas periodik
+            check_voice_channel.stop()
         else:
             await ctx.send("Sedang digunakan oleh orang lain, tidak bisa meninggalkan.")
     else:
@@ -199,6 +199,5 @@ async def help(ctx):
     embed.add_field(name="Command Custom", value="`woy` `bajing` `ping` `ulangi`")
     await ctx.send(embed=embed)
     
-
 # Jalankan bot dengan token yang dimuat dari .env
 bot.run(TOKEN)

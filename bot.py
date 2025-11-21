@@ -34,31 +34,7 @@ bot = commands.Bot(command_prefix='v', intents=intents, help_command=None)
 @bot.event
 async def on_ready():
     print(f'We have logged in as {bot.user}')
-    
-    print("\n--- MULAI DIAGNOSIS GEMINI ---")
-    
-    # 1. Cek apakah API Key terbaca
-    GEMINI_KEY_CHECK = os.getenv('GEMINI_API_KEY')
-    if GEMINI_KEY_CHECK:
-        # Tampilkan 5 huruf depan saja biar aman, sisanya bintang
-        print(f"STATUS API KEY: Terbaca ({GEMINI_KEY_CHECK[:5]}******)")
-    else:
-        print("STATUS API KEY: GAWAT! Key terbaca sebagai 'None' atau Kosong!")
 
-    # 2. Cek Model yang Tersedia
-    print("Mencoba menghubungi Google untuk minta daftar model...")
-    try:
-        import google.generativeai as genai
-        # Pastikan configure dipanggil lagi disini untuk memastikan
-        genai.configure(api_key=os.getenv('GEMINI_API_KEY'))
-        
-        for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods:
-                print(f"- Model Ditemukan: {m.name}")
-    except Exception as e:
-        print(f"ERROR saat nge-list model: {e}")
-        
-    print("--- DIAGNOSIS SELESAI ---\n")
 # Command Custom
 @bot.command()
 async def woy(ctx):
@@ -215,16 +191,10 @@ async def check_voice_channel():
 
 @bot.command()
 async def tanya(ctx, *, pertanyaan):
-    """Bertanya kepada Vot AI"""
-    # Kasih tahu user kalau bot lagi mikir (typing...)
     async with ctx.typing():
         try:
-            # Minta Vot AI mikir
             response = model.generate_content(pertanyaan)
             text = response.text
-
-            # Discord punya batas 2000 huruf per pesan.
-            # Kalau jawaban Vot AI kepanjangan, kita pecah.
             if len(text) > 2000:
                 for i in range(0, len(text), 2000):
                     await ctx.send(text[i:i+2000])
